@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 # Directories
+dist_test/
 docs/
 examples/
 output/
@@ -12,3 +13,4 @@ logs/
 
 # Files
 config.ini
+issue_alerts.spec
