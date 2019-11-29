@@ -1,0 +1,14 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Directories
+docs/
+examples/
+output/
+build/
+logs/
+
+# Files
+config.ini

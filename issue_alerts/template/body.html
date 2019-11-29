@@ -1,0 +1,7 @@
+<p><strong>{{ title }}</strong></p>
+<p>{{ authors|join('; ') }}</p>
+<p>{% if labs %}{% for l in labs %}{% if loop.index == 1 %}<a href="{{ l[2] }}">{{ l[0] }}</a>{% else %} | <a href="{{ l[2] }}">{{ l[1] }}</a>{% endif %}{% endfor %}{% endif -%}{% if labs %}{{'&nbsp;&nbsp;&nbsp;&nbsp;'}}{% endif %}
+{% if ltxt %}{% for l in ltxt %}{% if loop.index == 1 %}<a href="{{ l[2] }}">{{ l[0] }}</a>{% else %} | <a href="{{ l[2] }}">{{ l[1] }}</a>{% endif %}{% endfor %}{% endif -%}{% if ltxt %}{{'&nbsp;&nbsp;&nbsp;&nbsp;'}}{% endif %}
+{% if lpdf %}{% for l in lpdf %}{% if loop.index == 1 %}{{ l[0] }} (<a href="{{ l[1] }}">PDF</a>) {% else %} | {{ l[0] }} (<a href="{{ l[1] }}">PDF</a>){% endif %}{% endfor %}{% endif -%}</p>
+<hr />
+{{ '' }}

@@ -1,0 +1,289 @@
+import configparser
+import datetime
+import json
+import logging
+import os
+import sys
+
+import requests
+from jinja2 import Environment, FileSystemLoader, Template
+from xylose.scielodocument import Article, Issue
+
+import getpids
+
+
+# Check and create logs directorycd pro
+if os.path.exists('logs'):
+    pass
+else:
+    os.mkdir('logs')
+
+logging.basicConfig(
+    filename='logs/issue_alerts.info.txt', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def leave():
+    i = None
+    i = input("\nPress a key to exit... ")
+    if i != None:
+        sys.exit()
+
+
+def json2html(htmlout, config, issue):
+    # Write the html file
+    with open(htmlout, encoding='utf-8', mode='w') as f:
+
+        # Start HTML output
+        f.write(u'<html>\n<body>\n')
+
+        # Request Issue
+        # http://articlemeta.scielo.org/api/v1/issue/?code=0104-070720190001
+        uissue = config['articlemeta']['host'] + \
+            '/api/v1/issue/?code=%s&collection=scl' % issue
+        logger.info(uissue)
+
+        xissue = None
+        while xissue is None:
+            try:
+                rissue = requests.get(uissue)
+                xissue = Issue(rissue.json())
+                ram = True
+            except requests.exceptions.Timeout:
+                logger.info('error: %s' % e)
+                print("Timeout - Try again")
+                logger.info("Timeout - Try again")
+                leave()
+            except requests.exceptions.RequestException as e:
+                logger.info('error: %s' % e)
+                print("Request Error - Check your connection and try again")
+                logger.info(
+                    "Request Error - Check your connection and try again")
+                leave()
+            except json.decoder.JSONDecodeError as e:
+                logger.info('error: %s' % e)
+                print("Request Error - Try again")
+                logger.info("Request Error - Try again")
+                leave()
+
+        # Get PIDs through Kibana
+        query = "collection:scl AND issue:scl_S%s" % issue
+        issue_pids = getpids.pids_tuples(query)
+
+        # Invalid Sections
+        notsec = ['Errata', 'Erratum', 'Presentation', 'Apresentação']
+
+        # Valid Codes list
+        seccode_list = []
+
+        if xissue.sections != None:
+            for sec in list(xissue.sections.items()):
+                # print(sec)
+                if 'Errata' in sec[1].values() or 'Erratum' in sec[1].values():
+                    pass
+                else:
+                    seccode_list.append(sec[0])
+            # print(seccode_list)
+            # print('\n')
+
+        # JINJA
+        jinja_env = Environment(loader=FileSystemLoader('template'))
+        template = jinja_env.get_template('body.html')
+
+        previous_sec = None
+        for colpid in issue_pids:
+
+            pid = colpid[1]
+            logger.info(pid)
+
+            # Request Article
+            uart = config['articlemeta']['host'] + \
+                "/api/v1/article/?code=%s&collection=scl" % pid
+            xart = None
+            while xart is None:
+                try:
+                    rart = requests.get(uart)
+                    xart = Article(rart.json())
+                except requests.exceptions.Timeout:
+                    logger.info('error: %s' % e)
+                    print("Timeout - Try again")
+                    logger.info("Timeout - Try again")
+                    leave()
+                except requests.exceptions.RequestException as e:
+                    logger.info('error: %s' % e)
+                    print("Request Error - Check your connection and try again")
+                    logger.info(
+                        "Request Error - Check your connection and try again")
+                    leave()
+                except json.decoder.JSONDecodeError as e:
+                    logger.info('error: %s' % e)
+                    print("Request Error - Try again")
+                    logger.info("Request Error - Try again")
+                    leave()
+
+            # Language priority to HTML
+            lang_priority = ['en', 'pt', 'es']
+
+            if xart.section_code and xart.section_code in seccode_list:
+
+                # Defines the language of the template
+                for l in lang_priority:
+                    if l in xart.languages():
+                        lang = l
+                        break
+
+                # First section only
+                if lang in xissue.sections[xart.section_code].keys():
+                    section = xissue.sections[xart.section_code][lang].upper()
+                    if previous_sec != section:
+                        print(section)
+                        tsec = Template("<p><strong>{{ section }}</strong></p>")
+                        outsec = tsec.render(section=section)
+                        f.write(outsec)
+
+                        previous_sec = section
+
+                # Article metadata
+                print(pid, xart.original_title()[0:60])
+
+                # Title
+                title = xart.original_title()
+
+                # Authors
+                authors = [au['surname']+', '+au['given_names']
+                           for au in xart.authors]
+
+                # Label traductions
+                labelst = {
+                    'en': {
+                        'en': ('abstract in English', 'text in English', 'English'),
+                        'pt': ('abstract in Portuguese', 'text in Portugues', 'Portuguese'),
+                        'es': ('abstract in Spanish', 'text in Spanish', 'Spanish')},
+                    'pt': {
+                        'en': ('resumo em Inglês', 'texto em Inglês', 'Inglês'),
+                        'pt': ('resumo em Português', 'texto em Português', 'Português'),
+                        'es': ('resumo em Espanhol', 'texto em Espanhol', 'Espanhol')},
+                    'es': {
+                        'en': ('resumen en Inglés', 'texto en Inglés', 'Inglés'),
+                        'pt': ('resumen en Portugués', 'texto en Portugués', 'Portugués'),
+                        'es': ('resumen en Español', 'texto en Español', 'Español')}
+                }
+                # Abstracts links
+                labs = None
+                if xart.abstracts() != None:
+                    labs = []
+                    for s in xart.section.values():
+                        # print(lang)
+                        # print('section art: '+s)
+                        if s not in notsec:
+                            for l in xart.abstracts().keys():
+                                # print('lang abstract: '+l)
+                                uabse = 'http://www.scielo.br/scielo.php?script=sci_abstract&pid=%s&lng=%s&nrm=iso' % (
+                                    pid, l)
+                                labs.append(
+                                    (labelst[lang][l][0],
+                                     labelst[lang][l][2],
+                                     uabse)
+                                )
+                            # interrompe array idiomas
+                            break
+                        else:
+                            # interrompe array sections
+                            break
+
+                # Text Links
+                ltxt = None
+                if xart.fulltexts() != None:
+                    ltxt = []
+                    if 'html' in xart.fulltexts().keys():
+                        for l in xart.languages():
+                            utxt = xart.fulltexts()['html'][l]
+                            ltxt.append(
+                                (labelst[lang][l][1],
+                                 labelst[lang][l][2],
+                                 utxt)
+                            )
+                        # print(ltxt)
+
+                # PDF Links
+                lpdf = None
+                if xart.fulltexts() != None:
+                    lpdf = []
+                    if 'pdf' in xart.fulltexts().keys():
+                        for l in xart.languages():
+                            updf = xart.fulltexts()['pdf'][l]
+                            lpdf.append((labelst[lang][l][2], updf))
+                        # print(lpdf)
+
+                # Render HTML
+                output = template.render(
+                    title=title, authors=authors, labs=labs, lpdf=lpdf, ltxt=ltxt)
+                f.write(output)
+
+        # Terminate HTML output
+        f.write(u'</body>\n</html>')
+
+
+def main():
+    # Format ISO date
+    dateiso = datetime.datetime.now().strftime('%Y%m%d')
+
+    # Config
+    config = configparser.ConfigParser()
+    config._interpolation = configparser.ExtendedInterpolation()
+    config.read('config.ini')
+
+    # Folder and file names
+    if config['paths']['issuelistname'] == '':
+        print('issuelistname = empty.\nEnter a name for the issue list in config.ini.')
+        leave()
+
+    htmlfilename = config['paths']['htmlfilename']
+
+    htmlfolder = config['paths']['htmlfoldername']
+
+    if config['paths']['prefix'] == 'yes':
+        if config['paths']['htmlfilename'] == '':
+            htmlfilename = dateiso
+        else:
+            htmlfilename = ('%s_%s' % (dateiso, htmlfilename))
+
+    if config['paths']['prefix'] == 'no':
+        if config['paths']['htmlfilename'] == '':
+            print('htmlfilename = empty.\nEnter a name in config.ini.')
+            leave()
+
+    if config['paths']['prefix'] == '':
+        if config['paths']['htmlfilename'] == '':
+            print('htmlfilename = empty.\nEnter a name in config.ini.')
+            leave()
+
+    # ISSUE List
+    with open(config['paths']['issuelistname']) as f:
+        issuelist = [line.strip() for line in f]
+    f.close()
+
+    print('ISSUE list: ')
+
+    for issue in issuelist:
+        logger.info('issue: %s' % issue)
+        print(issue)
+        htmlout = ('%s/%s_%s.html' % (htmlfolder, htmlfilename, issue))
+        # htmlout = ('%s/%s.html' % (htmlfolder, htmlfilename))
+
+        print('\nfolder/htmlfile: %s\n' % htmlout)
+
+        # Check and create html folder output
+        if os.path.exists(htmlfolder):
+            pass
+        else:
+            os.mkdir(htmlfolder)
+
+        # Build HTML object
+        json2html(htmlout=htmlout, config=config, issue=issue)
+
+        leave()
+
+
+if __name__ == "__main__":
+    main()

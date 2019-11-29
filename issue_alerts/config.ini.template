@@ -1,0 +1,16 @@
+[paths]
+# File name of list of sbid for generate HTMLs [required]
+issuelistname = issue_list.txt
+
+# Folder name for html file output [required]
+htmlfoldername = output
+
+# HTML file name output [optional]
+htmlfilename =
+
+# To prefix file name with date iso format (yes/no) [required]
+prefix = yes
+
+[articlemeta]
+# Host of SciELO Articlemeta [required]
+host = 
