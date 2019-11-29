@@ -177,18 +177,19 @@ def json2html(htmlout, config, issue):
                         # print('section art: '+s)
                         if s not in notsec:
                             for l in xart.abstracts().keys():
-                                # print('lang abstract: '+l)
                                 uabse = 'http://www.scielo.br/scielo.php?script=sci_abstract&pid=%s&lng=%s&nrm=iso' % (
                                     pid, l)
+                                # append tuples
                                 labs.append(
                                     (labelst[lang][l][0],
                                      labelst[lang][l][2],
                                      uabse)
                                 )
-                            # interrompe array idiomas
+
+                            # break language array
                             break
                         else:
-                            # interrompe array sections
+                            # break sections array
                             break
 
                 # Text Links
@@ -263,11 +264,9 @@ def main():
         issuelist = [line.strip() for line in f]
     f.close()
 
-    print('ISSUE list: ')
-
     for issue in issuelist:
         logger.info('issue: %s' % issue)
-        print(issue)
+        print('\nissue: %s' % issue)
         htmlout = ('%s/%s_%s.html' % (htmlfolder, htmlfilename, issue))
         # htmlout = ('%s/%s.html' % (htmlfolder, htmlfilename))
 
@@ -282,7 +281,8 @@ def main():
         # Build HTML object
         json2html(htmlout=htmlout, config=config, issue=issue)
 
-        leave()
+    # End of operations
+    leave()
 
 
 if __name__ == "__main__":
