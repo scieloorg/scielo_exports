@@ -1,0 +1,4 @@
+Jinja2==2.10.3
+pycurl==7.43.0.2
+requests==2.22.0
+xylose==1.35.4
