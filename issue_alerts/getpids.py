@@ -9,6 +9,7 @@ import io
 import json
 import pycurl
 import sys
+import platform
 
 
 def export2csv(filename, query):
@@ -59,6 +60,9 @@ def search_kibana(query):
     c.setopt(c.POSTFIELDS, data)
     c.perform()
     c.close()
-    rjson = json.loads(r.getvalue())
+    if platform.system() == 'Windows':
+        rjson = json.loads(r.getvalue().decode())
+    else:
+        rjson = json.loads(r.getvalue())
 
     return rjson
