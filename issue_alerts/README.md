@@ -16,7 +16,7 @@ Produces HTML for issue alert service.
 - pycurl==7.43.0.2
 - requests==2.22.0
 - xylose==1.35.4
-
+- PyInstaller==3.5 (to compile for Windows)
 ### Python version supported
 - Python 2.7 or 3.4 through 3.6.
 - More details: Pycurl - PyPI - (https://pypi.org/project/pycurl/)
