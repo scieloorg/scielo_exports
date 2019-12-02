@@ -1,2 +1,2 @@
 # scielo_exports
-Scripts for data extractions and exports
+The purpose of this repository is to collect scripts for data extraction and export in various formats.
