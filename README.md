@@ -4,4 +4,4 @@ The purpose of this repository is to collect scripts for data extraction and exp
 
 ### Issue Alerts
 Produces HTML for issue alert service.
-[code](https://github.com/scieloorg/scielo_exports/tree/master/issue_alerts)
+More details [here](https://github.com/scieloorg/scielo_exports/tree/master/issue_alerts)
