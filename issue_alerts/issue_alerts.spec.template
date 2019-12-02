@@ -3,13 +3,13 @@
 block_cipher = None
 
 a = Analysis(['issue_alerts.py'],
-             pathex=['C:\\Users\\ednilson.gesseff\\projetos\\scielo\\scielo_exports\\issue_alerts\\'],
+             pathex=['%USERPROFILE%\\projetos\\scielo\\scielo_exports\\issue_alerts\\'],
              binaries=[],
              datas=[
-             ('C:\\Users\\ednilson.gesseff\\Envs\\issue_alerts\\Lib\\site-packages\\jinja2\\*.*', 'jinja2'),
-             ('C:\\Users\\ednilson.gesseff\\Envs\\issue_alerts\\Lib\\site-packages\\xylose\\', 'xylose'),
-             ('C:\\Users\\ednilson.gesseff\\Envs\\issue_alerts\\Lib\\site-packages\\curl\\*.*', 'curl'),
-             ('C:\\Users\\ednilson.gesseff\\Envs\\issue_alerts\\Lib\\site-packages\\requests\\*.*', 'requests'),
+             ('%USERPROFILE%\\Envs\\issue_alerts\\Lib\\site-packages\\jinja2\\*.*', 'jinja2'),
+             ('%USERPROFILE%\\Envs\\issue_alerts\\Lib\\site-packages\\xylose\\', 'xylose'),
+             ('%USERPROFILE%\\Envs\\issue_alerts\\Lib\\site-packages\\curl\\*.*', 'curl'),
+             ('%USERPROFILE%\\Envs\\issue_alerts\\Lib\\site-packages\\requests\\*.*', 'requests')
              ],
              hiddenimports=[],
              hookspath=[],
