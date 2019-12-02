@@ -2,7 +2,7 @@
 
 Produces HTML for issue alert service.
 
-## For Windows user (Windows10-64bits)
+## For Windows Users (Windows10-64bits)
 ### How to use
 - Download the .zip package [here](https://github.com/scieloorg/scielo_exports/raw/master/issue_alerts/dist/issue_alerts.zip)
 - Rename the config.ini.template file to config.ini
