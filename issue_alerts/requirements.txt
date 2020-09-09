@@ -1,5 +1,5 @@
-Jinja2==2.10.3
-pycurl==7.43.0.2
-requests==2.22.0
+elasticsearch==7.9.1
+Jinja2==2.11.2
+requests==2.24.0
 xylose==1.35.4
-PyInstaller==3.5
+PyInstaller==4.0
