@@ -1,15 +1,18 @@
+# coding: utf-8
 import configparser
 import datetime
 import json
 import logging
 import os
+# import platform
 import sys
 
 import requests
 from jinja2 import Environment, FileSystemLoader, Template
 from xylose.scielodocument import Article, Issue
 
-import getpids
+# getpids2 gets PIDs by ElasticSearch
+import getpids2
 
 
 # Check and create logs directorycd pro
@@ -48,7 +51,6 @@ def json2html(htmlout, config, issue):
             try:
                 rissue = requests.get(uissue)
                 xissue = Issue(rissue.json())
-                ram = True
             except requests.exceptions.Timeout:
                 logger.info('error: %s' % e)
                 print("Timeout - Try again")
@@ -68,11 +70,12 @@ def json2html(htmlout, config, issue):
 
         # Get PIDs through Kibana
         query = "collection:scl AND issue:scl_S%s" % issue
-        issue_pids = getpids.pids_tuples(query)
+
+        issue_pids = getpids2.pids_tuples(query)
 
         # Invalid Sections
-        notsec = ['Errata', 'Erratum', 'Presentation', 'Apresentação']
 
+        notsec = ['Errata', 'Erratum', 'Presentation', 'Apresentação']
         # Valid Codes list
         seccode_list = []
 
@@ -144,7 +147,11 @@ def json2html(htmlout, config, issue):
                         previous_sec = section
 
                 # Article metadata
-                print(pid, xart.original_title()[0:60])
+                try:
+                    print(pid, xart.original_title()[0:60])
+                except Exception as e:
+                    print('Error: %s' % e)
+                    leave()
 
                 # Title
                 title = xart.original_title()
@@ -286,4 +293,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # if platform.system() == 'Windows':
+    #     os.system('chcp 65001')
+    #     os.system('SET PYTHONIOENCODING=UTF-8')
     main()
