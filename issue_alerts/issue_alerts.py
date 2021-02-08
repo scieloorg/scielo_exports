@@ -87,7 +87,6 @@ def json2html(htmlout, config, issue):
                 else:
                     seccode_list.append(sec[0])
             # print(seccode_list)
-            # print('\n')
 
         # JINJA
         jinja_env = Environment(loader=FileSystemLoader('template'))
@@ -128,7 +127,6 @@ def json2html(htmlout, config, issue):
             lang_priority = ['en', 'pt', 'es']
 
             if xart.section_code and xart.section_code in seccode_list:
-
                 # Defines the language of the template
                 for l in lang_priority:
                     if l in xart.languages():
@@ -136,14 +134,22 @@ def json2html(htmlout, config, issue):
                         break
 
                 # First section only
-                if lang in xissue.sections[xart.section_code].keys():
-                    section = xissue.sections[xart.section_code][lang].upper()
+                # if lang in xissue.sections[xart.section_code].keys():
+                if 'en' in xissue.sections[xart.section_code].keys():
+                    section = xissue.sections[xart.section_code]['en'].upper()
                     if previous_sec != section:
                         print(section)
                         tsec = Template("<p><strong>{{ section }}</strong></p>")
                         outsec = tsec.render(section=section)
                         f.write(outsec)
-
+                        previous_sec = section
+                else:
+                    if lang in xissue.sections[xart.section_code].keys():
+                        section = section = xissue.sections[xart.section_code][lang].upper()
+                        print(section)
+                        tsec = Template("<p><strong>{{ section }}</strong></p>")
+                        outsec = tsec.render(section=section)
+                        f.write(outsec)
                         previous_sec = section
 
                 # Article metadata
@@ -154,7 +160,13 @@ def json2html(htmlout, config, issue):
                     leave()
 
                 # Title
-                title = xart.original_title()
+                title = None
+                if xart.original_language() == lang:
+                    title = xart.original_title()
+                elif lang in xart.translated_titles().keys():
+                    title = xart.translated_titles()[lang]
+                else:
+                    title = xart.original_title()
 
                 # Authors
                 authors = [au['surname']+', '+au['given_names']
@@ -175,29 +187,30 @@ def json2html(htmlout, config, issue):
                         'pt': ('resumen en Portugués', 'texto en Portugués', 'Portugués'),
                         'es': ('resumen en Español', 'texto en Español', 'Español')}
                 }
-                # Abstracts links
-                labs = None
-                if xart.abstracts() != None:
-                    labs = []
-                    for s in xart.section.values():
-                        # print(lang)
-                        # print('section art: '+s)
-                        if s not in notsec:
-                            for l in xart.abstracts().keys():
-                                uabse = 'http://www.scielo.br/scielo.php?script=sci_abstract&pid=%s&lng=%s&nrm=iso' % (
-                                    pid, l)
-                                # append tuples
-                                labs.append(
-                                    (labelst[lang][l][0],
-                                     labelst[lang][l][2],
-                                     uabse)
-                                )
-
-                            # break language array
-                            break
-                        else:
-                            # break sections array
-                            break
+                # Removed - Issue #5
+                # # Abstracts links
+                # labs = None
+                # if xart.abstracts() != None:
+                #     labs = []
+                #     for s in xart.section.values():
+                #         # print(lang)
+                #         # print('section art: '+s)
+                #         if s not in notsec:
+                #             for l in xart.abstracts().keys():
+                #                 uabse = 'http://www.scielo.br/scielo.php?script=sci_abstract&pid=%s&lng=%s&nrm=iso' % (
+                #                     pid, l)
+                #                 # append tuples
+                #                 labs.append(
+                #                     (labelst[lang][l][0],
+                #                      labelst[lang][l][2],
+                #                      uabse)
+                #                 )
+                #
+                #             # break language array
+                #             break
+                #         else:
+                #             # break sections array
+                #             break
 
                 # Text Links
                 ltxt = None
@@ -205,13 +218,14 @@ def json2html(htmlout, config, issue):
                     ltxt = []
                     if 'html' in xart.fulltexts().keys():
                         for l in xart.languages():
-                            utxt = xart.fulltexts()['html'][l]
-                            ltxt.append(
-                                (labelst[lang][l][1],
-                                 labelst[lang][l][2],
-                                 utxt)
-                            )
-                        # print(ltxt)
+                            if l in xart.fulltexts()['html']:
+                                utxt = xart.fulltexts()['html'][l]
+                                ltxt.append(
+                                    (labelst[lang][l][1],
+                                     labelst[lang][l][2],
+                                     utxt)
+                                )
+                                # print(ltxt)
 
                 # PDF Links
                 lpdf = None
@@ -225,7 +239,8 @@ def json2html(htmlout, config, issue):
 
                 # Render HTML
                 output = template.render(
-                    title=title, authors=authors, labs=labs, lpdf=lpdf, ltxt=ltxt)
+                    # title=title, authors=authors, labs=labs, lpdf=lpdf, ltxt=ltxt)
+                    title=title, authors=authors, lpdf=lpdf, ltxt=ltxt)
                 f.write(output)
 
         # Terminate HTML output
@@ -280,9 +295,7 @@ def main():
         print('\nfolder/htmlfile: %s\n' % htmlout)
 
         # Check and create html folder output
-        if os.path.exists(htmlfolder):
-            pass
-        else:
+        if not os.path.exists(htmlfolder):
             os.mkdir(htmlfolder)
 
         # Build HTML object
