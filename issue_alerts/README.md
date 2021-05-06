@@ -13,7 +13,7 @@ Produces HTML for issue alert service.
 ## For Developer (for the maintenance of the code)
 ### Requirements
 - elasticsearch==7.9.1
-- Jinja2==2.11.2
+- Jinja2==2.11.3
 - requests==2.24.0
 - xylose==1.35.4
 - PyInstaller==4.0 (to compile for Windows)
