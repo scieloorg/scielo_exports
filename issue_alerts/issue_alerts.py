@@ -8,6 +8,7 @@ import os
 import sys
 
 import requests
+from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader, Template
 from xylose.scielodocument import Article, Issue
 
@@ -160,8 +161,27 @@ def json2html(htmlout, config, issue):
                     leave()
 
                 # Title
+                title_html = None
                 title = None
-                if xart.original_language() == lang:
+                ## HTML title
+                try:
+                    r = requests.get("https://www.scielo.br/scielo.php?script=sci_arttext&pid="+pid+"&tlng=en")
+                except requests.exceptions.Timeout:
+                    logger.info('error: %s' % e)
+                    print("Timeout - Try again")
+                    logger.info("Timeout - Try again")
+                    leave()
+
+                if r:
+                    soup = BeautifulSoup(r.content, 'html.parser')
+                    ps = soup.find_all("p", class_="title")
+                    if ps:
+                        title_html = ps[0]
+
+                ## HTML title or original_title
+                if title_html:
+                    title = title_html
+                elif xart.original_language() == lang:
                     title = xart.original_title()
                 elif lang in xart.translated_titles().keys():
                     title = xart.translated_titles()[lang]
