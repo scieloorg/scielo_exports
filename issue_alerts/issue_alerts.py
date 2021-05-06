@@ -4,7 +4,6 @@ import datetime
 import json
 import logging
 import os
-# import platform
 import sys
 
 import requests
@@ -75,7 +74,6 @@ def json2html(htmlout, config, issue):
         issue_pids = getpids2.pids_tuples(query)
 
         # Invalid Sections
-
         notsec = ['Errata', 'Erratum', 'Presentation', 'Apresentação']
         # Valid Codes list
         seccode_list = []
@@ -87,7 +85,6 @@ def json2html(htmlout, config, issue):
                     pass
                 else:
                     seccode_list.append(sec[0])
-            # print(seccode_list)
 
         # JINJA
         jinja_env = Environment(loader=FileSystemLoader('template'))
@@ -128,7 +125,7 @@ def json2html(htmlout, config, issue):
             lang_priority = ['en', 'pt', 'es']
 
             if xart.section_code and xart.section_code in seccode_list:
-                # Defines the language of the template
+                # Sets the language of the template
                 for l in lang_priority:
                     if l in xart.languages():
                         lang = l
@@ -163,6 +160,7 @@ def json2html(htmlout, config, issue):
                 # Title
                 title_html = None
                 title = None
+
                 ## HTML title
                 try:
                     r = requests.get("https://www.scielo.br/scielo.php?script=sci_arttext&pid="+pid+"&tlng=en")
@@ -207,30 +205,6 @@ def json2html(htmlout, config, issue):
                         'pt': ('resumen en Portugués', 'texto en Portugués', 'Portugués'),
                         'es': ('resumen en Español', 'texto en Español', 'Español')}
                 }
-                # Removed - Issue #5
-                # # Abstracts links
-                # labs = None
-                # if xart.abstracts() != None:
-                #     labs = []
-                #     for s in xart.section.values():
-                #         # print(lang)
-                #         # print('section art: '+s)
-                #         if s not in notsec:
-                #             for l in xart.abstracts().keys():
-                #                 uabse = 'http://www.scielo.br/scielo.php?script=sci_abstract&pid=%s&lng=%s&nrm=iso' % (
-                #                     pid, l)
-                #                 # append tuples
-                #                 labs.append(
-                #                     (labelst[lang][l][0],
-                #                      labelst[lang][l][2],
-                #                      uabse)
-                #                 )
-                #
-                #             # break language array
-                #             break
-                #         else:
-                #             # break sections array
-                #             break
 
                 # Text Links
                 ltxt = None
@@ -245,7 +219,6 @@ def json2html(htmlout, config, issue):
                                      labelst[lang][l][2],
                                      utxt)
                                 )
-                                # print(ltxt)
 
                 # PDF Links
                 lpdf = None
@@ -310,8 +283,6 @@ def main():
         logger.info('issue: %s' % issue)
         print('\nissue: %s' % issue)
         htmlout = ('%s/%s_%s.html' % (htmlfolder, htmlfilename, issue))
-        # htmlout = ('%s/%s.html' % (htmlfolder, htmlfilename))
-
         print('\nfolder/htmlfile: %s\n' % htmlout)
 
         # Check and create html folder output
@@ -326,7 +297,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # if platform.system() == 'Windows':
-    #     os.system('chcp 65001')
-    #     os.system('SET PYTHONIOENCODING=UTF-8')
     main()
