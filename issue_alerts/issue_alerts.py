@@ -8,32 +8,43 @@ import sys
 
 import requests
 from bs4 import BeautifulSoup
+from bs4 import Comment
 from jinja2 import Environment, FileSystemLoader, Template
 from xylose.scielodocument import Article, Issue
 
-# getpids2 gets PIDs by ElasticSearch
-import getpids2
-
 
 # Check and create logs directorycd pro
-if os.path.exists('logs'):
-    pass
-else:
+if not os.path.exists('logs'):
     os.mkdir('logs')
 
-logging.basicConfig(
-    filename='logs/issue_alerts.info.txt', level=logging.INFO)
+logging.basicConfig(filename='logs/issue_alerts.info.txt', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 def leave():
-    i = None
     i = input("\nPress a key to exit... ")
-    if i != None:
+    if i != '':
         sys.exit()
 
 
-def json2html(htmlout, config, issue):
+def getpidlist(urli):
+    try:
+        r = requests.get(urli)
+        soup = BeautifulSoup(r.content, "html.parser")
+        pidscomm = soup.find_all(string=lambda text: isinstance(text, Comment) and 'PID:' in text)
+        pidlist = [pid.strip(' PID: ') for pid in pidscomm]
+        print('Total de documentos no fasciculo: %s\n' % (len(pidlist)))
+        return pidlist
+    except Exception as e:
+        print(e)
+
+
+# def json2html(htmlout, config, issue):
+def json2html(htmlout, config, urli):
+
+    issue_pids = getpidlist(urli)
+    issue = issue_pids[0][1:18]
+
     # Write the html file
     with open(htmlout, encoding='utf-8', mode='w') as f:
 
@@ -42,8 +53,7 @@ def json2html(htmlout, config, issue):
 
         # Request Issue
         # http://articlemeta.scielo.org/api/v1/issue/?code=0104-070720190001
-        uissue = config['articlemeta']['host'] + \
-            '/api/v1/issue/?code=%s&collection=scl' % issue
+        uissue = config['articlemeta']['host']+'/api/v1/issue/?code=%s' % issue
         logger.info(uissue)
 
         xissue = None
@@ -68,11 +78,6 @@ def json2html(htmlout, config, issue):
                 logger.info("Request Error - Try again")
                 leave()
 
-        # Get PIDs through Kibana
-        query = "collection:scl AND issue:scl_S%s" % issue
-
-        issue_pids = getpids2.pids_tuples(query)
-
         # Invalid Sections
         notsec = ['Errata', 'Erratum', 'Presentation', 'Apresentação']
         # Valid Codes list
@@ -80,7 +85,6 @@ def json2html(htmlout, config, issue):
 
         if xissue.sections != None:
             for sec in list(xissue.sections.items()):
-                # print(sec)
                 if 'Errata' in sec[1].values() or 'Erratum' in sec[1].values():
                     pass
                 else:
@@ -91,14 +95,10 @@ def json2html(htmlout, config, issue):
         template = jinja_env.get_template('body.html')
 
         previous_sec = None
-        for colpid in issue_pids:
-
-            pid = colpid[1]
+        for pid in issue_pids:
             logger.info(pid)
-
             # Request Article
-            uart = config['articlemeta']['host'] + \
-                "/api/v1/article/?code=%s&collection=scl" % pid
+            uart = config['articlemeta']['host']+"/api/v1/article/?code=%s" % pid
             xart = None
             while xart is None:
                 try:
@@ -132,12 +132,11 @@ def json2html(htmlout, config, issue):
                         break
 
                 # First section only
-                # if lang in xissue.sections[xart.section_code].keys():
                 if 'en' in xissue.sections[xart.section_code].keys():
                     section = xissue.sections[xart.section_code]['en'].upper()
                     if previous_sec != section:
                         print(section)
-                        tsec = Template("<p><strong>{{ section }}</strong></p>")
+                        tsec = Template("<p><strong>{{ section }}</strong></p>\n\n")
                         outsec = tsec.render(section=section)
                         f.write(outsec)
                         previous_sec = section
@@ -145,7 +144,7 @@ def json2html(htmlout, config, issue):
                     if lang in xissue.sections[xart.section_code].keys():
                         section = section = xissue.sections[xart.section_code][lang].upper()
                         print(section)
-                        tsec = Template("<p><strong>{{ section }}</strong></p>")
+                        tsec = Template("<p><strong>{{ section }}</strong></p>\n\n")
                         outsec = tsec.render(section=section)
                         f.write(outsec)
                         previous_sec = section
@@ -164,17 +163,20 @@ def json2html(htmlout, config, issue):
                 ## HTML title
                 try:
                     r = requests.get("https://www.scielo.br/scielo.php?script=sci_arttext&pid="+pid+"&tlng=en")
+                    soup = BeautifulSoup(r.content, 'html.parser')
+                    arttitle = soup.find("h1", {"class":"article-title"})
+                    arttitle.attrs.clear()
+                    arttitle.find_all('span')[0].replaceWithChildren()
+                    arttitle.find_all('span')[0].replaceWithChildren()
+                    arttitle.find_all('a')[0].replaceWithChildren()
+                    arttitle.name = 'strong'
+                    if arttitle:
+                        title_html = arttitle
                 except requests.exceptions.Timeout:
                     logger.info('error: %s' % e)
                     print("Timeout - Try again")
                     logger.info("Timeout - Try again")
                     leave()
-
-                if r:
-                    soup = BeautifulSoup(r.content, 'html.parser')
-                    ps = soup.find_all("p", class_="title")
-                    if ps:
-                        title_html = ps[0]
 
                 ## HTML title or original_title
                 if title_html:
@@ -217,8 +219,7 @@ def json2html(htmlout, config, issue):
                                 ltxt.append(
                                     (labelst[lang][l][1],
                                      labelst[lang][l][2],
-                                     utxt)
-                                )
+                                     utxt))
 
                 # PDF Links
                 lpdf = None
@@ -228,11 +229,9 @@ def json2html(htmlout, config, issue):
                         for l in xart.languages():
                             updf = xart.fulltexts()['pdf'][l]
                             lpdf.append((labelst[lang][l][2], updf))
-                        # print(lpdf)
 
                 # Render HTML
                 output = template.render(
-                    # title=title, authors=authors, labs=labs, lpdf=lpdf, ltxt=ltxt)
                     title=title, authors=authors, lpdf=lpdf, ltxt=ltxt)
                 f.write(output)
 
@@ -277,11 +276,14 @@ def main():
     # ISSUE List
     with open(config['paths']['issuelistname']) as f:
         issuelist = [line.strip() for line in f]
+        print(issuelist)
     f.close()
 
-    for issue in issuelist:
-        logger.info('issue: %s' % issue)
+    # for issue in issuelist:
+    for urli in issuelist:
+        issue = urli.split('/')[4]+urli.split('/')[6]
         print('\nissue: %s' % issue)
+        logger.info('issue: %s' % issue)
         htmlout = ('%s/%s_%s.html' % (htmlfolder, htmlfilename, issue))
         print('\nfolder/htmlfile: %s\n' % htmlout)
 
@@ -290,7 +292,7 @@ def main():
             os.mkdir(htmlfolder)
 
         # Build HTML object
-        json2html(htmlout=htmlout, config=config, issue=issue)
+        json2html(htmlout=htmlout, config=config, urli=urli)
 
     # End of operations
     leave()
