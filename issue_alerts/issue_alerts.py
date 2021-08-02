@@ -121,10 +121,9 @@ def json2html(htmlout, config, urli):
                     logger.info("Request Error - Try again")
                     leave()
 
-            # Language priority to HTML
-            lang_priority = ['en', 'pt', 'es']
-
             if xart.section_code and xart.section_code in seccode_list:
+                # Language priority to HTML
+                lang_priority = ['en', 'pt', 'es']
                 # Sets the language of the template
                 for l in lang_priority:
                     if l in xart.languages():
@@ -189,8 +188,9 @@ def json2html(htmlout, config, urli):
                     title = xart.original_title()
 
                 # Authors
-                authors = [au['surname']+', '+au['given_names']
-                           for au in xart.authors]
+                authors = []
+                if xart.authors:
+                    authors = [au['surname']+', '+au['given_names'] for au in xart.authors]
 
                 # Label traductions
                 labelst = {
