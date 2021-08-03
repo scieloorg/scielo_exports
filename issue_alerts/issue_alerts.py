@@ -33,17 +33,17 @@ def getpidlist(urli):
         soup = BeautifulSoup(r.content, "html.parser")
         pidscomm = soup.find_all(string=lambda text: isinstance(text, Comment) and 'PID:' in text)
         pidlist = [pid.strip(' PID: ') for pid in pidscomm]
-        print('Total de documentos no fasciculo: %s\n' % (len(pidlist)))
+        print('Total documents: %s\n' % (len(pidlist)))
         return pidlist
     except Exception as e:
         print(e)
 
 
-# def json2html(htmlout, config, issue):
 def json2html(htmlout, config, urli):
 
-    issue_pids = getpidlist(urli)
-    issue = issue_pids[0][1:18]
+    if urli:
+        issue_pids = getpidlist(urli)
+        issue = issue_pids[0][1:18]
 
     # Write the html file
     with open(htmlout, encoding='utf-8', mode='w') as f:
@@ -85,9 +85,7 @@ def json2html(htmlout, config, urli):
 
         if xissue.sections != None:
             for sec in list(xissue.sections.items()):
-                if 'Errata' in sec[1].values() or 'Erratum' in sec[1].values():
-                    pass
-                else:
+                if 'Errata' not in sec[1].values() or 'Erratum' not in sec[1].values():
                     seccode_list.append(sec[0])
 
         # JINJA
@@ -273,30 +271,27 @@ def main():
             print('htmlfilename = empty.\nEnter a name in config.ini.')
             leave()
 
-    # ISSUE List
+    # Check and create html folder output
+    if not os.path.exists(htmlfolder):
+        os.mkdir(htmlfolder)
+
+    # ISSUE or Article List
     with open(config['paths']['issuelistname']) as f:
         issuelist = [line.strip() for line in f]
-        print(issuelist)
     f.close()
 
     # for issue in issuelist:
     for urli in issuelist:
-        issue = urli.split('/')[4]+urli.split('/')[6]
-        print('\nissue: %s' % issue)
-        logger.info('issue: %s' % issue)
+        issue = urli.split('/')[4]+'_'+urli.split('/')[6]
         htmlout = ('%s/%s_%s.html' % (htmlfolder, htmlfilename, issue))
+        logger.info('issue: %s' % issue)
         print('\nfolder/htmlfile: %s\n' % htmlout)
-
-        # Check and create html folder output
-        if not os.path.exists(htmlfolder):
-            os.mkdir(htmlfolder)
 
         # Build HTML object
         json2html(htmlout=htmlout, config=config, urli=urli)
 
     # End of operations
     leave()
-
 
 if __name__ == "__main__":
     main()
