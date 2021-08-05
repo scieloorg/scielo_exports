@@ -27,41 +27,44 @@ def leave():
         sys.exit()
 
 
-def getpidcode(urli):
+def getpidcode(url):
     try:
-        r = requests.get(urli)
+        r = requests.get(url)
         soup = BeautifulSoup(r.content, "html.parser")
-
         # get PIDs
         pidscomm = soup.find_all(string=lambda text: isinstance(text, Comment) and 'PID:' in text)
         pids = [pid.strip(' PID: ') for pid in pidscomm]
-
-        # get Codes (new PID)
-        if urli.split('/')[5] == 'a':
+        # get Codes (new PID) and Prefix
+        if url.split('/')[5] == 'a':
             # is article
-            codes = [urli.split('/a/')[1].split('/')[0]]
-            prefix = [urli.split('/a/')[0]]
+            codes = [url.split('/a/')[1].split('/')[0]]
+            prefix = [url.split('/a/')[0] for p in range(len(pids))]
         else:
             # is issue
             arts = soup.find_all("li", attrs={"data-date":True})
             codes = [art.find_all('a')[-1].attrs['href'].split('/')[4] for art in arts]
-            prefix = [urli.split('/i/')[0]]
+            prefix = [url.split('/i/')[0] for p in range(len(pids))]
 
-        # zip PIDs and Codes
+        # zip Prefix, Codes and PIDs
         pidscodelist = list(zip(prefix, codes, pids))
-        print('Total documents: %s\n' % (len(pidscodelist)))
 
         return pidscodelist
+
     except Exception as e:
         print(e)
         leave()
 
 
-def json2html(htmlout, config, urli):
+def json2html(htmlout, config, urli=None, articles=None):
 
     if urli:
         pid_code_list = getpidcode(urli)
-        issue = pid_code_list[0][2][1:18]
+
+    if articles:
+        for urla in articles:
+            pid_code_list = [getpidcode(urla)[0] for urla in articles]
+
+    print('Total documents: %s\n' % (len(pid_code_list)))
 
     # Write the html file
     with open(htmlout, encoding='utf-8', mode='w') as f:
@@ -69,9 +72,10 @@ def json2html(htmlout, config, urli):
         # Start HTML output
         f.write(u'<html>\n<body>\n')
 
+        issue_pid = pid_code_list[0][2][1:18]
         # Request Issue
         # http://articlemeta.scielo.org/api/v1/issue/?code=0104-070720190001
-        uissue = config['articlemeta']['host']+'/api/v1/issue/?code=%s' % issue
+        uissue = config['articlemeta']['host']+'/api/v1/issue/?code=%s' % issue_pid
         logger.info(uissue)
 
         xissue = None
@@ -112,7 +116,7 @@ def json2html(htmlout, config, urli):
 
         previous_sec = None
         for prefix, code, pid in pid_code_list:
-            logger.info(pid, code)
+            # logger.info(pid, code)
             # Request Article
             uart = config['articlemeta']['host']+"/api/v1/article/?code=%s" % pid
             xart = None
@@ -217,27 +221,13 @@ def json2html(htmlout, config, urli):
 
                 # Links to full text (URL)
                 ltxt = None
-                print(xart.collection_acronym, urli)
-                if urli.split('/')[5] == 'a':
-                    print('artigo')
-
                 if xart.fulltexts() != None:
                     ltxt = []
                     if 'html' in xart.fulltexts().keys():
                         for l in xart.languages():
                             if l in xart.fulltexts()['html']:
-                                if urli.split('/')[5] == 'a':
-                                    print('link urli artigo')
-                                    utxt = urli
-                                    ltxt.append(
-                                    (link_text[l][0],
-                                     link_text[l][1],
-                                     utxt))
-                                else:
-                                    if xart.collection_acronym != 'scl':
-                                        print(urli)
-                                    utxt = xart.fulltexts()['html'][l]
-                                    ltxt.append(
+                                utxt = '%s/a/%s/?lang=%s' % (prefix, code, l)
+                                ltxt.append(
                                     (link_text[l][0],
                                      link_text[l][1],
                                      utxt))
@@ -248,8 +238,7 @@ def json2html(htmlout, config, urli):
                     lpdf = []
                     if 'pdf' in xart.fulltexts().keys():
                         for l in xart.languages():
-                            updf = xart.fulltexts()['pdf'][l]
-                            # lpdf.append((labelst[lang][l][2], updf))
+                            updf = '%s/a/%s/?format=pdf&lang=%s' % (prefix, code, l)
                             lpdf.append((link_text[l][1], updf))
 
                 # Render HTML
@@ -305,31 +294,29 @@ def main():
     f.close()
 
     articles = []
-    issues = []
     for url in urllist:
         if url.split('/')[5] == 'a':
             articles.append(url)
 
+    issues = []
     for url in urllist:
         if url.split('/')[5] == 'i':
             issues.append(url)
 
     if issues:
-        print(issues)
         for urli in issues:
             issue = urli.split('/')[4]+'_'+urli.split('/')[6]
             htmlout = ('%s/%s_%s.html' % (htmlfolder, htmlfilename, issue))
             logger.info('issue: %s' % issue)
             print('\nfolder/htmlfile: %s\n' % htmlout)
             # Build HTML object
-            json2html(htmlout=htmlout, config=config, urli=urli)
+            json2html(htmlout=htmlout, config=config, urli=urli, articles=None)
 
     if articles:
         htmlout = ('%s/%s_%s.html' % (htmlfolder, htmlfilename, '_articles'))
-        for urla in articles:
-            print(urla)
-            print('\nfolder/htmlfile: %s\n' % htmlout)
-            json2html(htmlout=htmlout, config=config, urli=urla)
+        print('\nfolder/htmlfile: %s\n' % htmlout)
+        # Build HTML object
+        json2html(htmlout=htmlout, config=config, urli=None, articles=articles)
 
     # End of operations
     leave()
