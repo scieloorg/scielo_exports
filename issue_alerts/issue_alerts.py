@@ -165,7 +165,7 @@ def json2html(htmlout, config, urli=None, articles=None):
                 elif lang in xissue.sections[xart.section_code].keys():
                     section = xissue.sections[xart.section_code][lang].upper()
             else:
-                section = None
+                section = "*** ERROR SECTION ***"
 
             if section:
                 if previous_sec != section and section.upper() not in invalid_sec:
