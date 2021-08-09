@@ -13,4 +13,8 @@ prefix = yes
 
 [articlemeta]
 # Host of SciELO Articlemeta [required]
-host = 
+host =
+
+# Invalid sections list
+[invalid_sec]
+sections = Errata, Erratum, Apresentação, Presentation
