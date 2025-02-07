@@ -1,4 +1,4 @@
-Jinja2==2.11.3
+Jinja2==3.1.5
 requests==2.32.2
 xylose==1.35.4
 PyInstaller==4.0
