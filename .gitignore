@@ -15,3 +15,4 @@ venv/
 # Files
 config.ini
 issue_alerts.spec
+issue_list.txt
