@@ -55,7 +55,7 @@ def getpidcode(url):
             prefix = [url.split('/a/')[0] for p in range(len(pids))]
         else:
             # is issue
-            arts = soup.find_all("li", attrs={"data-date":True})
+            arts = soup.find_all("td", attrs={"data-date":True})
             codes = [art.find_all('a')[-1].attrs['href'].split('/')[4] for art in arts]
             prefix = [url.split('/i/')[0] for p in range(len(pids))]
 
