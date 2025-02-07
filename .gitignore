@@ -10,6 +10,7 @@ examples/
 output/
 build/
 logs/
+venv/
 
 # Files
 config.ini
