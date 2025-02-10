@@ -114,7 +114,7 @@ def json2html(htmlout, config, urli=None, articles=None):
 
     print('Total documents: %s\n' % (len(pid_code_list)))
 
-    # Write the html file
+    # Write the HTML file
     with open(htmlout, encoding='utf-8', mode='w') as f:
         # Start HTML output
         f.write(u'<html>\n<body>\n')
@@ -129,7 +129,9 @@ def json2html(htmlout, config, urli=None, articles=None):
         template = jinja_env.get_template('body.html')
 
         previous_sec = None
+
         for prefix, code, pid in pid_code_list:
+            
             # Request Article
             uart = config['articlemeta']['host']+"/api/v1/article/?code=%s" % pid
             xart = None
@@ -191,9 +193,10 @@ def json2html(htmlout, config, urli=None, articles=None):
                         r = requests.get(link)
                         soup = BeautifulSoup(r.content, 'html.parser')
                         arttitle = soup.find("h1", {"class":"article-title"})
+                        
                         # Clear tags and attributes
+                        [img.decompose() for img in arttitle.find_all('img')]
                         [a.decompose() for a in arttitle.find_all('a')]
-                        [su.decompose() for su in arttitle.find_all('sup')]
                         [st.decompose() for st in arttitle.find_all('strong')]
                         [sp.decompose() for sp in arttitle.find_all('span')]
                         arttitle.attrs.clear()
@@ -227,24 +230,31 @@ def json2html(htmlout, config, urli=None, articles=None):
                             'pt': ('text in Portuguese', 'Portuguese'),
                             'es': ('text in Spanish', 'Spanish')}
 
-                    # Full text links
-                    ltxt = None
-                    if xart.fulltexts() != None:
-                        ltxt = []
-                        if 'html' in xart.fulltexts().keys():
-                            for l in xart.languages():
-                                if l in xart.fulltexts()['html']:
-                                    utxt = '%s/a/%s/?lang=%s' % (prefix, code, l)
-                                    ltxt.append(
-                                        (link_text[l][0],
-                                         link_text[l][1],
-                                         utxt))
+                    # DOI languages
+                    doilang = [l[0] for l in xart.doi_and_lang]
+                    doilang.sort()
+                    # print(doilang)
 
+                    # Text Links
+                    llinktxt = None
+                    btntxt = soup.find_all("ul", {"aria-labelledby": "btnGroupDropTextLanguage"})[0]
+                    llinktxt = btntxt.find_all('a')
+
+                    if llinktxt:
+                        ltxt = []
+                        # 'html' in xart.fulltexts().keys():
+                        for l in doilang:
+                            utxt = '%s/a/%s/?lang=%s' % (prefix, code, l)
+                            ltxt.append((link_text[l][0], link_text[l][1], utxt))
+                    
                     # PDF Links
-                    lpdf = None
-                    if xart.fulltexts() != None:
+                    llinkpdf = None
+                    btnpdf = soup.find_all("ul", {"aria-labelledby": "btnGroupDropPDF"})[0]
+                    llinkpdf = btnpdf.find_all('a')
+
+                    if llinkpdf:
                         lpdf = []
-                        for l in xart.languages(): # and PDF in site ????
+                        for l in doilang:
                             updf = '%s/a/%s/?format=pdf&lang=%s' % (prefix, code, l)
                             lpdf.append((link_text[l][1], updf))
 
@@ -295,7 +305,7 @@ def main():
     for url in urllist:
         if url.split('/')[5] == 'a':
             articles.append(url)
-    articles=list(set(articles))
+    # articles=list(set(articles))
 
     issues = []
     for url in urllist:
@@ -314,6 +324,7 @@ def main():
         acron = articles[0].split('/')[4]
         htmlout = ('%s/%s_%s_articles.html' % (htmlfolder, htmlfilename, acron))
         print('\nfolder/htmlfile: %s\n' % htmlout)
+        
         # Build HTML object
         json2html(htmlout=htmlout, config=config, urli=None, articles=articles)
 
