@@ -6,9 +6,9 @@ a = Analysis(['issue_alerts.py'],
              pathex=['%USERPROFILE%\\projetos\\scielo\\scielo_exports\\issue_alerts\\'],
              binaries=[],
              datas=[
-             ('%USERPROFILE%\\Envs\\issue_alerts\\Lib\\site-packages\\jinja2\\*.*', 'jinja2'),
-             ('%USERPROFILE%\\Envs\\issue_alerts\\Lib\\site-packages\\xylose\\', 'xylose'),
-             ('%USERPROFILE%\\Envs\\issue_alerts\\Lib\\site-packages\\requests\\*.*', 'requests')
+             ('%USERPROFILE%\\projetos\\scielo\\scielo_exports\\issue_alerts\\venv\\Lib\\site-packages\\jinja2\\*.*', 'jinja2'),
+             ('%USERPROFILE%\\projetos\\scielo\\scielo_exports\\issue_alerts\\venv\\Lib\\site-packages\\xylose\\', 'xylose'),
+             ('%USERPROFILE%\\projetos\\scielo\\scielo_exports\\issue_alerts\\venv\\Lib\\site-packages\\requests\\*.*', 'requests')
              ],
              hiddenimports=[],
              hookspath=[],
