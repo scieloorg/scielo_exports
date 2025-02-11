@@ -40,6 +40,7 @@ def leave():
 
 
 def getpidcode(url):
+    print('Getting list of pids...')
     try:
         r = requests.get(url)
         soup = BeautifulSoup(r.content, "html.parser")
@@ -230,20 +231,34 @@ def json2html(htmlout, config, urli=None, articles=None):
                             'pt': ('text in Portuguese', 'Portuguese'),
                             'es': ('text in Spanish', 'Spanish')}
 
-                    # DOI languages
-                    doilang = [l[0] for l in xart.doi_and_lang]
-                    doilang.sort()
-                    # print(doilang)
-
+                    # Valid languages dict
+                    vld = [
+                        {'en': 'Inglês'}, 
+                        {'en': 'English'}, 
+                        {'en': 'Inglés'},
+                        {'pt': 'Português'},
+                        {'pt': 'Portuguese'},
+                        {'pt': 'Portugués'},
+                        {'es': 'Espanhol'},
+                        {'es': 'Spanish'},
+                        {'es': 'Espanõl'},
+                        ]
+                    
                     # Text Links
                     llinktxt = None
                     btntxt = soup.find_all("ul", {"aria-labelledby": "btnGroupDropTextLanguage"})[0]
                     llinktxt = btntxt.find_all('a')
 
+                    langtxt = []
+                    for a in llinktxt:
+                        for d in vld:
+                            for k, v in d.items():
+                                if v in a.text.strip():
+                                    langtxt.append(k)
+
                     if llinktxt:
                         ltxt = []
-                        # 'html' in xart.fulltexts().keys():
-                        for l in doilang:
+                        for l in langtxt:
                             utxt = '%s/a/%s/?lang=%s' % (prefix, code, l)
                             ltxt.append((link_text[l][0], link_text[l][1], utxt))
                     
@@ -254,7 +269,7 @@ def json2html(htmlout, config, urli=None, articles=None):
 
                     if llinkpdf:
                         lpdf = []
-                        for l in doilang:
+                        for l in langtxt: # uses languagues from text links
                             updf = '%s/a/%s/?format=pdf&lang=%s' % (prefix, code, l)
                             lpdf.append((link_text[l][1], updf))
 
@@ -305,7 +320,6 @@ def main():
     for url in urllist:
         if url.split('/')[5] == 'a':
             articles.append(url)
-    # articles=list(set(articles))
 
     issues = []
     for url in urllist:
@@ -317,6 +331,7 @@ def main():
             issue = urli.split('/')[4]+'_'+urli.split('/')[6]
             htmlout = ('%s/%s_%s.html' % (htmlfolder, htmlfilename, issue))
             print('\nfolder/htmlfile: %s\n' % htmlout)
+            
             # Build HTML object
             json2html(htmlout=htmlout, config=config, urli=urli, articles=None)
 
