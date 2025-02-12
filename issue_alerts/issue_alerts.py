@@ -40,7 +40,6 @@ def leave():
 
 
 def getpidcode(url):
-    print('Getting list of pids...')
     try:
         r = requests.get(url)
         soup = BeautifulSoup(r.content, "html.parser")
@@ -107,6 +106,7 @@ def requestissue(config, issue_pid):
 
 def json2html(htmlout, config, urli=None, articles=None):
     # get PID and Codes
+    print('Getting list of pids...')
     if urli:
         pid_code_list = getpidcode(urli)
 
@@ -154,7 +154,8 @@ def json2html(htmlout, config, urli=None, articles=None):
                     leave()
 
             # Language priority to HTML
-            lang_priority = ['en', 'pt', 'es']
+            lang_priority = ['en', 'pt', 'es', 'fr', 'it', 'de', 'ru']
+
             # Sets the language of the template
             for l in lang_priority:
                 if l in xart.languages():
@@ -163,12 +164,13 @@ def json2html(htmlout, config, urli=None, articles=None):
 
             # First section only
             if xart.section_code:
-                if 'en' in xissue.sections[xart.section_code].keys():
-                    section = xissue.sections[xart.section_code]['en'].upper()
-                elif lang in xissue.sections[xart.section_code].keys():
-                    section = xissue.sections[xart.section_code][lang].upper()
+                if xart.section_code in xissue.sections.keys():
+                    if 'en' in xissue.sections[xart.section_code].keys():
+                        section = xissue.sections[xart.section_code]['en'].upper()
+                    elif lang in xissue.sections[xart.section_code].keys():
+                        section = xissue.sections[xart.section_code][lang].upper()
             else:
-                section = "*** ERROR SECTION ***"
+                section = "ORIGINAL ARTICLE"
 
             if section:
                 if previous_sec != section and section.upper() not in invalid_sec:
@@ -217,8 +219,12 @@ def json2html(htmlout, config, urli=None, articles=None):
                         title = xart.translated_titles()[lang]
                     else:
                         title = xart.original_title()
+
                     # show PID title to user
-                    print(pid, title.text.strip()[0:60])
+                    if title_html:
+                        print(pid, title.text.strip()[0:60])
+                    else:
+                        print(pid, title.strip()[0:60])
 
                     # Authors
                     authors = []
@@ -229,7 +235,12 @@ def json2html(htmlout, config, urli=None, articles=None):
                     link_text = {
                             'en': ('text in English', 'English'),
                             'pt': ('text in Portuguese', 'Portuguese'),
-                            'es': ('text in Spanish', 'Spanish')}
+                            'es': ('text in Spanish', 'Spanish'),
+                            'fr': ('text in French', 'French'),
+                            'it': ('text in Italian', 'Italian'),
+                            'de': ('text in German', 'German'),
+                            'ru': ('text in Russian', 'Russian'),
+                            }
 
                     # Valid languages dict
                     vld = [
@@ -242,7 +253,10 @@ def json2html(htmlout, config, urli=None, articles=None):
                         {'es': 'Espanhol'},
                         {'es': 'Spanish'},
                         {'es': 'Espanõl'},
-                        ]
+                        {'fr': 'Français'},
+                        {'it': 'Italiano'},
+                        {'de': 'Deutsch'},
+                        {'ru': 'Русский'}] 
                     
                     # Text Links
                     llinktxt = None
