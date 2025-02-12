@@ -12,9 +12,11 @@ Produces HTML for issue alert service.
 
 ## For Developer (for the maintenance of the code)
 ### Requirements
-- Jinja2==2.11.3
-- requests==2.24.0
-- xylose==1.35.4
-- PyInstaller==4.0 (to compile for Windows)
+- beautifulsoup4==4.13.3
+- Jinja2==3.1.5
+- requests==2.32.2
+- xylose==1.35.11
+- PyInstaller==6.10.0  (to compile for Windows)
+
 ### Python version supported
-- Python 3.4 through 3.7.
+- Python 3.4 through 3.13.0
